@@ -1,0 +1,905 @@
+# MASTER DEVELOPMENT PROMPT: PIC TO PDF — NATIVE ANDROID DOCUMENT SCANNER AND PDF CREATOR
+
+## 1. PROJECT OVERVIEW
+
+Act as a senior Android developer, Kotlin engineer, Material Design 3 UI/UX designer, document-scanning specialist, and software architect.
+
+Build a complete, functional, production-quality native Android application named **Pic To PDF**.
+
+The application allows users to capture documents using their phone's camera, import existing images, arrange and edit the images, and convert them into professional PDF documents that can be saved, previewed, renamed, shared, and managed directly on the device.
+
+This must be a real Android application, not a website, PWA, WebView application, React Native app, Flutter application, or demonstration prototype.
+
+### Mandatory technology stack
+
+- Native Android development.
+- Kotlin as the primary programming language.
+- Jetpack Compose for the entire application UI.
+- Material Design 3 (M3) for the design system and components.
+- Material 3 adaptive layouts where appropriate.
+- AndroidX Activity Result APIs for system activities.
+- Android's native camera capabilities.
+- Android Photo Picker for importing existing images.
+- Android `android.graphics.pdf.PdfDocument` for PDF generation.
+- Android Storage Access Framework (SAF) for saving documents to user-selected locations.
+- Kotlin Coroutines and Dispatchers.IO for background processing.
+- ViewModel and StateFlow for UI state management.
+- Room database for lightweight local document metadata and history, if needed.
+- DataStore for user preferences.
+- Coil for displaying local image thumbnails, if needed.
+- Gradle Kotlin DSL for build configuration.
+
+Use stable, mutually compatible dependencies wherever possible. Do not introduce experimental libraries unless absolutely necessary.
+
+Do not use Python, a remote PDF conversion API, Firebase, a cloud database, a server, or an external subscription-based service. All essential functionality must work locally on the device.
+
+The application must work without an internet connection.
+
+## 2. APP IDENTITY AND BRANDING
+
+Application name: Pic To PDF
+
+Suggested package name: `com.picpdf.creator`
+
+Use a polished, modern, professional visual identity appropriate for a productivity application.
+
+Design a custom app icon featuring a document outline, a photograph symbol, and a PDF indicator. Use clean geometry and a recognizable silhouette that remains legible at small sizes.
+
+Create a consistent visual language across the launcher icon, splash screen, onboarding, home screen, editor, PDF preview, settings, and dialogs.
+
+### Visual direction
+
+- Material Design 3.
+- Modern, minimal, elegant, and intuitive.
+- Rounded cards and buttons with consistent corner radii.
+- Proper visual hierarchy and generous spacing.
+- Clear typography and accessible contrast.
+- Material Symbols or suitable Material icons.
+- Subtle animations and tactile interaction feedback.
+- A carefully selected primary color with neutral surfaces.
+- Dynamic color support on compatible Android versions.
+- Light theme and dark theme.
+- System theme as the default theme setting.
+- Edge-to-edge layouts that respect system bars and display cutouts.
+
+Do not create a cluttered interface. Avoid excessive gradients, oversized decorative graphics, unnecessary dashboard statistics, or too many competing colors.
+
+Use actual functional controls instead of decorative mockups.
+
+## 3. APPLICATION ARCHITECTURE
+
+Use a maintainable architecture that separates the UI, business logic, data access, and Android platform integrations.
+
+Suggested structure:
+
+- `app/`
+  - `data/`
+    - `local/`
+    - `repository/`
+    - `preferences/`
+  - `domain/`
+    - `model/`
+    - `usecase/`
+  - `camera/`
+  - `image/`
+    - `processing/`
+    - `editing/`
+  - `pdf/`
+    - `PdfGenerator.kt`
+    - `PdfPageRenderer.kt`
+    - `PdfSettings.kt`
+  - `storage/`
+  - `navigation/`
+  - `ui/`
+    - `theme/`
+    - `components/`
+    - `screens/`
+      - `HomeScreen.kt`
+      - `CameraScreen.kt`
+      - `ImageImportScreen.kt`
+      - `PageEditorScreen.kt`
+      - `PdfSettingsScreen.kt`
+      - `PdfPreviewScreen.kt`
+      - `DocumentsScreen.kt`
+      - `SettingsScreen.kt`
+      - `AboutScreen.kt`
+  - `viewmodel/`
+  - `util/`
+
+This structure is a guide, not a requirement to create unnecessary files. Keep the implementation understandable and avoid overengineering.
+
+Use a single-activity architecture with Jetpack Compose navigation.
+
+Create reusable components for buttons, document cards, image thumbnails, page counters, empty states, progress indicators, confirmation dialogs, and error messages.
+
+Keep image processing and PDF generation out of composable functions. Composables must not perform expensive operations directly.
+
+## 4. SPLASH SCREEN AND FIRST LAUNCH
+
+Create a brief, polished native splash screen using the Android SplashScreen API where supported.
+
+Display the Pic To PDF icon and application name using the app's visual identity.
+
+Transition smoothly into the home screen.
+
+Do not add a fake loading screen, arbitrary long delay, or unnecessary loading animation before the actual app starts.
+
+On first launch, provide a short, skippable introduction explaining:
+
+1. Capture documents with the camera.
+2. Import existing photos.
+3. Arrange and enhance pages.
+4. Create and share PDFs offline.
+
+Provide a clear Start button and a Skip option.
+
+Persist onboarding completion so returning users go directly to the home screen.
+
+## 5. HOME SCREEN
+
+Build a polished home screen that makes the main task immediately obvious.
+
+### Top app bar
+
+Display:
+
+- Pic To PDF branding.
+- A settings icon.
+- A suitable action for accessing the document library.
+
+Use appropriate Material 3 app bar components.
+
+### Primary action area
+
+Display two prominent actions:
+
+1. **Scan with Camera**
+2. **Import Photos**
+
+The camera action should be the most prominent.
+
+Use large, accessible cards or buttons with recognizable icons and concise labels.
+
+### Recent documents
+
+Display recently created PDFs in a clean list or responsive grid.
+
+Each document item should show:
+
+- PDF document icon or generated thumbnail.
+- Filename.
+- Number of pages.
+- File size when available.
+- Creation date.
+- Overflow menu.
+
+Overflow actions must include appropriate options such as:
+
+- Open or preview.
+- Rename.
+- Share.
+- View file details.
+- Delete from the app's history.
+- Delete the actual file only when the app has permission and the user explicitly confirms.
+
+Use an empty state when no PDFs exist, with a clear invitation to create the first document.
+
+Provide a View All action that opens the complete document library.
+
+### Important
+
+Do not display fake document counts, sample files, fake recent activity, or hardcoded file sizes.
+
+Show real information obtained from locally available data.
+
+## 6. NATIVE CAMERA INTEGRATION
+
+Implement a working document-capture workflow using the phone's camera.
+
+Use the most appropriate Android-native approach.
+
+Preferred implementation: CameraX with a native camera preview embedded in a Jetpack Compose screen, using a compatible AndroidX CameraX version.
+
+If a reliable embedded camera implementation cannot be completed, use the Android system camera through an appropriate Activity Result contract as a fallback. Do not substitute a fake camera screen.
+
+### Camera screen
+
+Display:
+
+- Live camera preview.
+- Capture button.
+- Flash toggle when supported.
+- Camera switching when supported.
+- Close or back action.
+- Image count.
+- Gallery import shortcut.
+- Guidance to position the document within the frame.
+
+Support portrait and landscape orientations.
+
+Request camera permission only when the user starts a camera-related action. If permission is denied, explain the situation and provide a clear alternative to import an existing image.
+
+Handle devices without a usable camera gracefully.
+
+### Capture behavior
+
+When the user taps Capture:
+
+1. Capture an actual photograph.
+2. Save the original capture to a suitable app-private temporary or working location.
+3. Add the captured image to the current document session.
+4. Display a thumbnail of the captured page.
+5. Allow additional captures without leaving the workflow.
+6. Provide a way to finish scanning and proceed to page editing.
+
+Use unique temporary filenames and prevent accidental overwriting.
+
+Preserve sufficient image resolution for readable documents, while avoiding unnecessary memory consumption.
+
+Do not keep multiple full-resolution copies of every image in memory.
+
+### Multi-page scanning
+
+The user must be able to capture multiple pages in one session.
+
+For example, a user can photograph five pages of a contract, arrange them, and export all five images as pages of a single PDF.
+
+Allow the user to review the pages before conversion.
+
+## 7. IMPORT EXISTING PHOTOS
+
+Implement Android's Photo Picker using the appropriate Activity Result API.
+
+Allow the user to select multiple images in one operation, subject to practical device and memory limits.
+
+Support common image formats that Android can decode, including JPEG, PNG, and WebP where supported.
+
+Handle selected content URIs safely.
+
+The app must not assume that imported files have permanent filesystem paths.
+
+If imported URIs are needed after the picker closes, either process them promptly or retain the required access appropriately. Copy images into app-private working storage when necessary for a stable editing workflow.
+
+Display imported images as ordered page thumbnails.
+
+Allow additional images to be added to an existing session.
+
+Avoid requesting broad photo-library or storage permissions when the system picker and Storage Access Framework can fulfill the requirement.
+
+Handle unsupported formats, corrupted images, inaccessible files, and cancelled selection gracefully.
+
+## 8. PAGE EDITOR AND IMAGE MANAGEMENT
+
+Create a dedicated editing screen after the user captures or imports images.
+
+The screen should contain:
+
+- A main image preview.
+- A horizontal or vertical strip of page thumbnails.
+- A visible page count.
+- An Add Page action.
+- An Edit Image action.
+- A Reorder Pages action.
+- A Delete Page action.
+- A Continue to PDF Settings action.
+
+### Page ordering
+
+Allow users to change page order through intuitive drag-and-drop interactions.
+
+The PDF must use the current displayed order, not the original selection order.
+
+Provide page numbers on thumbnails.
+
+### Page operations
+
+Implement:
+
+- Rotate left by 90 degrees.
+- Rotate right by 90 degrees.
+- Crop.
+- Reset edits.
+- Delete a page.
+- Duplicate a page if practical.
+- Reorder pages.
+- Add more images.
+
+Require confirmation before destructive operations when appropriate.
+
+If all pages are removed, show an empty state and prevent PDF generation until at least one valid page is added.
+
+### Cropping
+
+Implement a functional crop editor with a visible crop rectangle, adjustable edges or corners, and Apply and Cancel actions.
+
+Use a reliable image-processing implementation. Store crop parameters or generate a processed derivative without destroying the original image.
+
+### Perspective correction
+
+If feasible, add document-edge detection and perspective correction to straighten photographed documents.
+
+Treat automatic edge detection as an enhancement, not a mandatory dependency. A manual crop tool must remain available even if automatic detection fails.
+
+Do not pretend to have detected document edges when no actual detection algorithm exists.
+
+### Image orientation
+
+Respect EXIF orientation when decoding imported photographs.
+
+Ensure that rotated images display correctly in the editor and in the final PDF.
+
+Avoid applying the same rotation twice.
+
+## 9. IMAGE ENHANCEMENT
+
+Offer a simple image enhancement panel designed for document readability.
+
+Include the following options:
+
+- Original Color.
+- Grayscale.
+- Black and White.
+- Brightness adjustment.
+- Contrast adjustment.
+- Image rotation.
+
+Optional advanced enhancements:
+
+- Adaptive thresholding for document text.
+- Sharpening.
+- Shadow reduction.
+- Background cleanup.
+
+Implement actual pixel-processing operations, not just changes to the preview.
+
+Use a sensible processing pipeline so filters are applied consistently in the preview and exported PDF.
+
+Keep the original source image recoverable until the user finishes the workflow.
+
+### Processing modes
+
+Original Color:
+Preserve the original appearance as much as possible.
+
+Grayscale:
+Convert the image to grayscale while retaining readable details.
+
+Black and White:
+Apply a configurable threshold or suitable adaptive thresholding algorithm for high-contrast document scans.
+
+Ensure that small text remains readable. Avoid aggressive compression or thresholding that removes thin characters.
+
+If an advanced enhancement cannot be implemented reliably, omit it rather than exposing a nonfunctional control.
+
+## 10. PDF GENERATION ENGINE
+
+This is the core functionality of the application.
+
+Implement a real PDF-generation service using Kotlin and Android's native `android.graphics.pdf.PdfDocument` API.
+
+The implementation must create valid, readable PDF files that can be opened by standard Android PDF viewers and other compatible PDF applications.
+
+### PDF creation workflow
+
+When the user confirms PDF creation:
+
+1. Validate the document session.
+2. Validate that every selected page has a readable image.
+3. Load and process each page using memory-efficient decoding.
+4. Apply rotation, crop, and image enhancements.
+5. Calculate the selected PDF page dimensions.
+6. Create a PDF page using `PdfDocument.PageInfo.Builder`.
+7. Draw the processed image onto the PDF page canvas.
+8. Preserve the image's aspect ratio unless the user explicitly selects an appropriate alternative.
+9. Finish the PDF page.
+10. Repeat for all pages in their current order.
+11. Write the completed document to the selected output stream.
+12. Close the PDF document and release resources in all success and failure paths.
+13. Validate the output and report the result.
+14. Present the completed PDF with Preview, Share, and Create Another actions.
+
+Use `try/finally` or equivalent structured resource management to ensure streams and PDF resources are closed properly.
+
+Never generate a PDF by simply renaming a JPEG file with a `.pdf` extension.
+
+### PDF page sizes
+
+Offer these paper-size options:
+
+- A4.
+- Letter.
+- Legal.
+- Original Image Size.
+- Fit to Page.
+
+Use standard dimensions with a clearly defined internal unit system. For standard paper sizes, use PDF page dimensions in points, with 72 points per inch.
+
+For A4, use approximately 595.28 × 841.89 points.
+
+For Letter, use 612 × 792 points.
+
+For Legal, use 612 × 1008 points.
+
+For Original Image Size, calculate a sensible PDF page size based on image dimensions and a documented DPI assumption.
+
+### Page orientation
+
+Support:
+
+- Portrait.
+- Landscape.
+- Auto.
+
+Auto orientation should choose the most suitable orientation for each page or apply a consistent document-wide orientation according to the selected setting.
+
+Do not stretch images disproportionately.
+
+### Image fitting
+
+Offer:
+
+- Fit to Page: fit the complete image within the page boundaries.
+- Fill Page: fill the page while preserving aspect ratio, cropping excess only when necessary.
+- Original Proportions: preserve the complete image with suitable margins.
+
+For document scans, default to Fit to Page.
+
+Allow a configurable margin, with a sensible default such as 18–24 points for standard paper sizes.
+
+Keep all image content within the printable PDF page area.
+
+### PDF quality
+
+Offer three practical quality presets:
+
+- Small File.
+- Balanced.
+- High Quality.
+
+Suggested behavior:
+
+Small File:
+- Resize images to an appropriate resolution.
+- Apply stronger image compression where supported.
+- Prefer grayscale or monochrome output only when the user explicitly selects that processing mode.
+
+Balanced:
+- Preserve readable document text.
+- Use moderate image resizing and compression.
+- Optimize for everyday sharing.
+
+High Quality:
+- Preserve more original image detail.
+- Avoid unnecessary downscaling.
+- Accept larger output files.
+
+Do not promise a specific file size reduction. Actual results depend on the original images.
+
+Use a suitable JPEG encoding quality for processed photographic images. Recognize that Android's `PdfDocument` does not expose a general-purpose PDF compression-quality setting; image resizing and image encoding must be handled before drawing images into PDF pages.
+
+Avoid converting every image to a large uncompressed bitmap unnecessarily.
+
+### File naming
+
+Allow the user to name the output PDF.
+
+Default to a meaningful name such as:
+
+`PicToPDF_2026-10-20_1530.pdf`
+
+Use a unique filename when a conflict exists.
+
+Sanitize invalid filename characters.
+
+Do not silently overwrite existing documents.
+
+### Background processing
+
+PDF creation must run off the main thread.
+
+Use Kotlin Coroutines with `Dispatchers.IO` for decoding, processing, and writing.
+
+Expose generation progress through observable UI state.
+
+Show:
+
+- Current progress.
+- Number of pages processed.
+- Total number of pages.
+- A Cancel action where safe.
+
+Avoid freezing the UI during large conversions.
+
+Handle cancellation without leaving a corrupt output file marked as completed.
+
+Write to a temporary output where practical and publish the final result only after successful completion.
+
+### Memory safety
+
+The application must remain stable when processing several high-resolution images.
+
+Implement:
+
+- Downsampling where appropriate.
+- Efficient bitmap decoding.
+- Deterministic resource release.
+- Sequential page processing where possible.
+- Limits or warnings for exceptionally large batches.
+- Graceful handling of `OutOfMemoryError` where recovery is possible.
+
+Do not keep all full-resolution source images and processed copies in memory simultaneously.
+
+Do not catch fatal errors and then continue as if PDF generation succeeded.
+
+## 11. SAVE PDF FILES LOCALLY
+
+Use Android's Storage Access Framework, particularly `ACTION_CREATE_DOCUMENT` or an equivalent Activity Result contract, to let the user select where to save the PDF.
+
+Use the MIME type `application/pdf`.
+
+Allow users to save to:
+
+- A folder on the device.
+- A user-selected external storage location.
+- A supported document provider, including cloud-backed providers exposed by Android.
+
+Cloud destinations are optional system-provided destinations, not a cloud backend implemented by this app.
+
+Do not require the user to grant unrestricted filesystem access.
+
+Where appropriate, provide a default filename in the system save dialog.
+
+If the user cancels the save dialog, return safely to the previous screen without losing the editable document session.
+
+After a successful save, display:
+
+- PDF filename.
+- Page count.
+- File size.
+- Save location when available.
+- Preview PDF.
+- Share PDF.
+- Return Home.
+
+Only report success after the output has been written successfully.
+
+## 12. PDF PREVIEW AND SHARING
+
+Implement a useful PDF preview workflow.
+
+Use Android's native `PdfRenderer` for rendering saved PDF pages into previews, with appropriate resource management and background execution.
+
+Display pages in a vertically scrolling preview, with page navigation or a thumbnail strip where useful.
+
+Provide:
+
+- Zoom controls or pinch-to-zoom where feasible.
+- Page count.
+- Page navigation.
+- Share.
+- Save As.
+- Close.
+
+If implementing a full PDF viewer becomes too complex, implement an accurate page preview and a working Open PDF action through an installed compatible viewer.
+
+Do not display a fake PDF preview using only the source images without confirming that the PDF was generated.
+
+### Sharing
+
+Implement sharing through Android's `ACTION_SEND` intent with:
+
+- MIME type `application/pdf`.
+- A valid content URI.
+- `FileProvider` when sharing an app-private file.
+- Temporary read permission for the receiving application.
+
+Use Android's Sharesheet.
+
+Allow the user to share the generated PDF through compatible installed apps.
+
+Never expose an unrestricted `file://` URI or a private absolute filesystem path to another application.
+
+If sharing fails because no compatible application is available, display a helpful message.
+
+## 13. DOCUMENT LIBRARY AND HISTORY
+
+Create a Documents screen for accessing PDFs created by the app.
+
+Use Room to store lightweight metadata if a local database is needed.
+
+Suggested metadata:
+
+- Internal document ID.
+- Display name.
+- App-managed file URI or other valid document reference.
+- Creation timestamp.
+- Last modified timestamp.
+- Page count.
+- File size.
+- Thumbnail reference, if maintained.
+
+Do not store the entire PDF or all image bitmaps in Room.
+
+Support:
+
+- Recent documents.
+- All documents.
+- Search by filename.
+- Sorting by date or name.
+- Rename metadata or file when supported.
+- Preview.
+- Share.
+- Delete.
+- Empty and error states.
+
+Distinguish between an app-created file that can be managed and a user-selected external file that the app cannot modify.
+
+If a user deletes a document from the library, explain whether the operation removes the actual file or only removes its entry from the app's history.
+
+Do not claim to manage every PDF on the device. The library should primarily represent files the app has created or has been explicitly granted access to.
+
+Reconcile stale history entries when files are no longer accessible.
+
+## 14. SETTINGS
+
+Build a clean settings screen containing:
+
+- Theme: System, Light, Dark.
+- Default paper size.
+- Default page orientation.
+- Default PDF quality.
+- Default image processing mode.
+- Default margin.
+- Remember last-used settings.
+- Clear temporary working files.
+- Privacy information.
+- About Pic To PDF.
+- App version.
+
+Persist preferences using DataStore.
+
+Make sure changing a default does not unexpectedly alter a document currently being edited.
+
+Provide confirmation for operations that could remove temporary work.
+
+## 15. ABOUT AND PRIVACY
+
+Create an About screen with:
+
+- Pic To PDF.
+- App version.
+- A short app description.
+- Privacy information.
+- Open-source acknowledgments where applicable.
+
+Privacy statement:
+
+"Pic To PDF processes your images and creates PDF documents locally on your device. Your documents are not uploaded to a Pic To PDF server. No account or cloud database is required."
+
+Ensure this statement remains accurate: do not introduce analytics, advertising SDKs, telemetry, or remote processing that would contradict it.
+
+The app must not request contacts, location, microphone, SMS, or phone permissions.
+
+Request camera access only for camera functionality. Use the Android Photo Picker for selected images and SAF for file operations.
+
+Do not add internet permission unless an explicitly approved feature genuinely requires it.
+
+## 16. ERROR HANDLING AND USER FEEDBACK
+
+Implement clear, actionable feedback for:
+
+- Camera permission denied.
+- Camera unavailable.
+- Capture failure.
+- Image import failure.
+- Unsupported or corrupted image.
+- Empty document.
+- Crop or image-processing failure.
+- PDF generation failure.
+- Insufficient storage.
+- Save cancellation.
+- Save failure.
+- File already exists.
+- PDF preview failure.
+- Missing sharing application.
+- Inaccessible or deleted document.
+
+Use Material 3 Snackbar, AlertDialog, inline error states, and progress indicators appropriately.
+
+Do not show raw stack traces, internal exception messages, or technical jargon to ordinary users.
+
+Log useful diagnostic information in development builds without logging private document contents.
+
+Ensure progress indicators disappear when operations finish or fail.
+
+Prevent duplicate submissions if the user taps Generate PDF repeatedly.
+
+## 17. ACCESSIBILITY AND RESPONSIVENESS
+
+Support:
+
+- Small Android phones.
+- Large phones.
+- Tablets.
+- Portrait and landscape.
+- Edge-to-edge layouts.
+- System font scaling.
+- TalkBack.
+- Accessible content descriptions.
+- Adequate touch target sizes.
+- High-contrast readable text.
+- Light and dark themes.
+
+Use responsive Compose layouts rather than fixed screen dimensions.
+
+Ensure bottom action buttons are not obscured by system navigation bars or display cutouts.
+
+Avoid clipping the last item in scrolling lists.
+
+Use stable keys in lazy lists.
+
+Handle configuration changes and process recreation without losing important document metadata. Preserve temporary session data when practical, and clearly handle unrecoverable temporary files.
+
+## 18. PERFORMANCE AND RELIABILITY
+
+Optimize the application for everyday Android devices, including devices with limited memory.
+
+Avoid unnecessary background services.
+
+Do not keep the camera active after leaving the camera screen.
+
+Release CameraX resources and image-processing resources correctly.
+
+Avoid blocking the main thread.
+
+Prevent accidental duplicate page insertion.
+
+Ensure rotations, crops, filters, and page ordering are reflected consistently in the generated PDF.
+
+Use predictable temporary-file cleanup.
+
+Never delete source images imported from the user's gallery.
+
+Do not delete a saved PDF without explicit user confirmation.
+
+Make sure a failed conversion does not leave a broken file in the completed-document library.
+
+## 19. TESTING REQUIREMENTS
+
+Create meaningful unit tests for core business logic.
+
+Test:
+
+- PDF page-size calculations.
+- Aspect-ratio preservation.
+- Page ordering.
+- Rotation and crop transformations.
+- Image-filter behavior.
+- Filename sanitization.
+- PDF generation with one image.
+- PDF generation with multiple images.
+- Empty-input validation.
+- Corrupted-image handling.
+- Duplicate filenames.
+- Save cancellation.
+- Temporary-file cleanup.
+- Error-state handling.
+
+Add instrumentation or UI tests for the main navigation and document-creation workflow where practical.
+
+Verify that a generated PDF can be reopened and that its page count matches the expected number of pages.
+
+Verify that generated pages are not blank, rotated incorrectly, or clipped.
+
+Test on at least one emulator and, when available, a physical Android device.
+
+## 20. BUILD AND PROJECT CONFIGURATION
+
+Configure a complete Android Studio project using Kotlin and Jetpack Compose.
+
+Provide:
+
+- Root Gradle configuration.
+- App-level Gradle configuration.
+- Version catalog if used.
+- Android manifest.
+- Required resources.
+- Theme definitions.
+- Launcher icon resources.
+- Compose navigation.
+- Room database configuration if used.
+- DataStore configuration if used.
+- CameraX configuration if used.
+- FileProvider configuration if used.
+- ProGuard or R8 rules where necessary.
+- Unit and instrumentation test setup.
+- README with build instructions.
+
+Choose a sensible `minSdk` compatible with the selected libraries and target a current stable Android SDK.
+
+Use stable compatible dependency versions and document any important version constraints.
+
+Do not use nonexistent dependency coordinates, deprecated APIs when a suitable supported alternative exists, or arbitrary versions copied from unrelated projects.
+
+The project must sync and compile in Android Studio.
+
+## 21. MONETIZATION READINESS WITHOUT PAID DEPENDENCIES
+
+Keep the architecture ready for optional future monetization, but do not implement advertisements, subscriptions, payments, tracking, or account registration in the initial release.
+
+The initial app must remain fully functional without purchasing anything.
+
+Do not integrate an ad SDK merely to make the project monetization-ready.
+
+Do not introduce any feature that requires a paid API, cloud service, subscription, or mandatory account.
+
+If future monetization is considered, it must not compromise local document privacy or prevent users from accessing PDFs they have already created.
+
+## 22. DEFINITION OF DONE
+
+The project is complete only when the following end-to-end workflow works:
+
+1. The user launches Pic To PDF.
+2. The user taps Scan with Camera.
+3. The app opens a real camera preview and captures a document page.
+4. The user captures additional pages or imports existing images.
+5. The user sees the actual page thumbnails.
+6. The user rotates, crops, filters, deletes, or reorders pages.
+7. The user chooses PDF page size, orientation, margins, and quality.
+8. The user enters a filename.
+9. The app generates a valid multi-page PDF locally.
+10. The user saves the PDF to a chosen location.
+11. The app confirms success only after the save completes.
+12. The user can preview the generated PDF.
+13. The user can share the PDF through Android's Sharesheet.
+14. The document appears in the app's library when it is managed by the app.
+15. The user can reopen the app later and access previously saved documents when their files remain accessible.
+16. The complete workflow functions without internet access.
+
+Every primary action must perform its advertised operation.
+
+No fake camera preview, fake conversion, placeholder PDF, mock save operation, hardcoded success message, or decorative-only control is acceptable.
+
+## 23. IMPLEMENTATION INSTRUCTIONS FOR GOOGLE AI STUDIO
+
+Build the actual application, not just a design proposal or a written tutorial.
+
+Start by establishing the project structure and implementing the essential end-to-end workflow.
+
+Prioritize functionality in this order:
+
+Phase 1:
+- Native Android project setup.
+- Material 3 theme and navigation.
+- Home screen.
+- Camera capture.
+- Photo import.
+- Multi-page editing and reordering.
+- Native PDF generation.
+- Save PDF using SAF.
+
+Phase 2:
+- Crop and rotation.
+- Grayscale and black-and-white processing.
+- Paper size, orientation, and quality settings.
+- PDF preview and sharing.
+- Document library and history.
+
+Phase 3:
+- Advanced document enhancement.
+- Improved thumbnails and search.
+- Dark theme refinement.
+- Accessibility improvements.
+- Tests, performance optimization, and final polish.
+
+Do not stop after generating the home screen or creating a static UI prototype.
+
+Do not omit critical source files or replace the implementation with pseudocode.
+
+If the environment cannot generate every file in a single response, work in coherent stages while maintaining a consistent project structure. Clearly identify which files have been implemented and which remain incomplete.
+
+After implementation, review the code for compilation errors, missing imports, incompatible dependencies, incorrect permissions, invalid URI handling, resource leaks, and nonfunctional controls.
+
+Run available build and test commands. Fix the errors that can be reproduced before declaring the project complete.
+
+Deliver a fully functional native Android Pic To PDF application with a polished Material 3 interface, reliable local PDF creation, and no mandatory paid services or cloud dependencies.
